@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Road Warrior EV Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    color: #e2e8f0;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #60a5fa;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 24px;
+  }
+
+  .progress-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+
+  .progress-dot {
+    flex: 1;
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.1);
+    transition: background 0.3s;
+  }
+  .progress-dot.active { background: #60a5fa; }
+  .progress-dot.done   { background: #3b82f6; }
+
+  .group { margin-bottom: 20px; }
+
+  label {
+    font-size: 13px;
+    color: #93c5fd;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  input[type="text"], input[type="tel"], select {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: #e2e8f0;
+    font-size: 14px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus, input[type="tel"]:focus, select:focus {
+    border-color: #3b82f6;
+  }
+  input.error, select.error { border-color: #f87171 !important; }
+
+  select { background: #1e293b; cursor: pointer; }
+  select option { background: #1e293b; }
+
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+
+  .chip {
+    display: inline-block;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #cbd5e1;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+    font-family: inherit;
+    background-color: transparent;
+  }
+  .chip:hover { border-color: rgba(255,255,255,0.3); }
+  .chip.active {
+    background: rgba(59,130,246,0.25);
+    border-color: #3b82f6;
+    color: #93c5fd;
+  }
+
+  .listen-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(16,185,129,0.15);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: #34d399;
+    border-radius: 8px;
+    padding: 6px 13px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    font-family: inherit;
+    transition: opacity 0.2s;
+  }
+  .listen-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .btn {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 28px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+    font-family: inherit;
+    transition: opacity 0.2s;
+  }
+  .btn:disabled { opacity: 0.6; cursor: default; }
+
+  .btn-ghost {
+    background: rgba(255,255,255,0.06);
+    color: #94a3b8;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 13px 28px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-green {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 28px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+    font-family: inherit;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .nav-row { display: flex; gap: 10px; margin-top: 8px; }
+  .nav-row .btn { flex: 2; }
+  .nav-row .btn-ghost { flex: 1; }
+
+  .err {
+    color: #f87171;
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  .err::before { content: "⚠ "; }
+
+  .lang-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .lang-chip {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: 15px;
+    padding: 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    cursor: pointer;
+    color: #cbd5e1;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .lang-chip.active {
+    background: rgba(59,130,246,0.25);
+    border-color: #3b82f6;
+    color: #93c5fd;
+  }
+
+  .ref-box {
+    background: rgba(59,130,246,0.1);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #93c5fd;
+    text-align: center;
+  }
+  .ref-code {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    display: block;
+    margin-top: 6px;
+  }
+
+  .done-emoji { font-size: 60px; text-align: center; margin-bottom: 16px; }
+  .done-title { font-size: 26px; font-weight: 800; color: #60a5fa; text-align: center; margin-bottom: 8px; }
+  .done-body  { font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 24px; }
+
+  .hidden { display: none !important; }
+
+  input[type="text"].other-input { margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="card" id="app"></div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const SHEET_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+
+// ─── LANGUAGES ───────────────────────────────────────────────────────────────
+const LANGUAGES = {
+  en: { native:"English",   code:"en-IN" },
+  hi: { native:"हिंदी",     code:"hi-IN" },
+  gu: { native:"ગુજરાતી",   code:"gu-IN" },
+  mr: { native:"मराठी",     code:"mr-IN" },
+  ta: { native:"தமிழ்",     code:"ta-IN" },
+  te: { native:"తెలుగు",    code:"te-IN" },
+  kn: { native:"ಕನ್ನಡ",     code:"kn-IN" },
+  bn: { native:"বাংলা",     code:"bn-IN" },
+};
+
+// ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
+const T = {
+  title:          {en:"Road Warrior EV Challenge",hi:"रोड वॉरियर ईवी चैलेंज",gu:"રોડ વૉરિયર EV ચૅલૅન્જ",mr:"रोड वॉरियर ईव्ही चॅलेंज",ta:"ரோட் வாரியர் EV சவால்",te:"రోడ్ వారియర్ EV ఛాలెంజ్",kn:"ರೋಡ್ ವಾರಿಯರ್ EV ಚಾಲೆಂಜ್",bn:"রোড ওয়ারিয়র EV চ্যালেঞ্জ"},
+  subtitle:       {en:"Share your EV delivery experience",hi:"अपना ईवी डिलीवरी अनुभव साझा करें",gu:"તમારો EV ડિલિવરી અનુભવ શૅર કરો",mr:"तुमचा ईव्ही डिलिव्हरी अनुभव सांगा",ta:"உங்கள் EV டெலிவரி அனுபவத்தை பகிரவும்",te:"మీ EV డెలివరీ అనుభవాన్ని పంచుకోండి",kn:"ನಿಮ್ಮ EV ಡೆಲಿವರಿ ಅನುಭವ ಹಂಚಿಕೊಳ್ಳಿ",bn:"আপনার EV ডেলিভারি অভিজ্ঞতা শেয়ার করুন"},
+  next:           {en:"Next",hi:"आगे",gu:"આગળ",mr:"पुढे",ta:"அடுத்து",te:"తర్వాత",kn:"ಮುಂದೆ",bn:"পরবর্তী"},
+  prev:           {en:"Back",hi:"पीछे",gu:"પાછળ",mr:"मागे",ta:"பின்",te:"వెనక్కి",kn:"ಹಿಂದೆ",bn:"পিছনে"},
+  submit:         {en:"Submit",hi:"जमा करें",gu:"સબમિટ કરો",mr:"सबमिट करा",ta:"சமர்ப்பி",te:"సమర్పించు",kn:"ಸಲ್ಲಿಸು",bn:"জমা দিন"},
+  listen:         {en:"🔊 Listen",hi:"🔊 सुनें",gu:"🔊 સાંભળો",mr:"🔊 ऐका",ta:"🔊 கேளுங்கள்",te:"🔊 వినండి",kn:"🔊 ಕೇಳಿ",bn:"🔊 শুনুন"},
+  name:           {en:"Your Name",hi:"आपका नाम",gu:"તમારું નામ",mr:"तुमचे नाव",ta:"உங்கள் பெயர்",te:"మీ పేరు",kn:"ನಿಮ್ಮ ಹೆಸರು",bn:"আপনার নাম"},
+  phone:          {en:"Phone Number",hi:"फ़ोन नंबर",gu:"ફોન નંબર",mr:"फोन नंबर",ta:"தொலைபேசி எண்",te:"ఫోన్ నంబర్",kn:"ಫೋನ್ ನಂಬರ್",bn:"ফোন নম্বর"},
+  state:          {en:"State",hi:"राज्य",gu:"રાજ્ય",mr:"राज्य",ta:"மாநிலம்",te:"రాష్ట్రం",kn:"ರಾಜ್ಯ",bn:"রাজ্য"},
+  city:           {en:"City",hi:"शहर",gu:"શહેર",mr:"शहर",ta:"நகரம்",te:"నగరం",kn:"ನಗರ",bn:"শহর"},
+  platform:       {en:"Which platform do you use?",hi:"आप कौन सा प्लेटफ़ॉर्म उपयोग करते हैं?",gu:"તમે કયો પ્લૅટફૉર્મ ઉપયોગ કરો છો?",mr:"तुम्ही कोणता प्लॅटफॉर्म वापरता?",ta:"நீங்கள் எந்த தளத்தை பயன்படுத்துகிறீர்கள்?",te:"మీరు ఏ ప్లాట్‌ఫారమ్ ఉపయోగిస్తారు?",kn:"ನೀವು ಯಾವ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್ ಬಳಸುತ್ತೀರಿ?",bn:"আপনি কোন প্ল্যাটফর্ম ব্যবহার করেন?"},
+  currentVehicle: {en:"Which vehicle do you currently drive?",hi:"आप अभी कौन सा वाहन चलाते हैं?",gu:"તમે હાલમાં કયું વાહન ચલાવો છો?",mr:"तुम्ही सध्या कोणते वाहन चालवता?",ta:"நீங்கள் தற்போது எந்த வாகனம் ஓட்டுகிறீர்கள்?",te:"మీరు ప్రస్తుతం ఏ వాహనం నడుపుతున్నారు?",kn:"ನೀವು ಪ್ರಸ್ತುತ ಯಾವ ವಾಹನ ಓಡಿಸುತ್ತೀರಿ?",bn:"আপনি বর্তমানে কোন যানবাহন চালান?"},
+  fuelType:       {en:"Fuel Type",hi:"ईंधन का प्रकार",gu:"ઇંધણ પ્રકાર",mr:"इंधनाचा प्रकार",ta:"எரிபொருள் வகை",te:"ఇంధన రకం",kn:"ಇಂಧನ ವಿಧ",bn:"জ্বালানির ধরন"},
+  evSpeed:        {en:"What is your average delivery speed?",hi:"आपकी औसत डिलीवरी गति क्या है?",gu:"તમારી સરેરાશ ડિલિવરી ઝડપ શું છે?",mr:"तुमचा सरासरी डिलिव्हरी वेग काय आहे?",ta:"உங்கள் சராசரி டெலிவரி வேகம் என்ன?",te:"మీ సగటు డెలివరీ వేగం ఎంత?",kn:"ನಿಮ್ಮ ಸರಾಸರಿ ಡೆಲಿವರಿ ವೇಗ ಎಷ್ಟು?",bn:"আপনার গড় ডেলিভারি গতি কত?"},
+  chargingMethod: {en:"How do you charge your vehicle?",hi:"आप अपने वाहन को कैसे चार्ज करते हैं?",gu:"તમે તમારું વાહન કેવી રીતે ચાર્જ કરો છો?",mr:"तुम्ही तुमचे वाहन कसे चार्ज करता?",ta:"உங்கள் வாகனத்தை எவ்வாறு சார்ஜ் செய்கிறீர்கள்?",te:"మీరు మీ వాహనాన్ని ఎలా ఛార్జ్ చేస్తారు?",kn:"ನೀವು ನಿಮ್ಮ ವಾಹನವನ್ನು ಹೇಗೆ ಚಾರ್ಜ್ ಮಾಡುತ್ತೀರಿ?",bn:"আপনি আপনার যানবাহন কীভাবে চার্জ করেন?"},
+  chargeTime:     {en:"How long does charging take?",hi:"चार्जिंग में कितना समय लगता है?",gu:"ચાર્જ થવામાં કેટલો સમય લાગે છે?",mr:"चार्जिंगला किती वेळ लागतो?",ta:"சார்ஜ் ஆக எவ்வளவு நேரம் ஆகும்?",te:"ఛార్జింగ్‌కు ఎంత సమయం పట్టుతుంది?",kn:"ಚಾರ್ಜಿಂಗ್‌ಗೆ ಎಷ್ಟು ಸಮಯ ಬೇಕು?",bn:"চার্জ হতে কতক্ষণ সময় লাগে?"},
+  ownership:      {en:"Vehicle ownership",hi:"वाहन स्वामित्व",gu:"વાહન માલિકી",mr:"वाहन मालकी",ta:"வாகன உரிமை",te:"వాహన యాజమాన్యం",kn:"ವಾಹನ ಮಾಲೀಕತ್ವ",bn:"যানবাহনের মালিকানা"},
+  emiRent:        {en:"Monthly EMI / Rent (₹)",hi:"मासिक ईएमआई / किराया (₹)",gu:"માસિક EMI / ભાડું (₹)",mr:"मासिक EMI / भाडे (₹)",ta:"மாதாந்திர EMI / வாடகை (₹)",te:"నెలవారీ EMI / అద్దె (₹)",kn:"ಮಾಸಿಕ EMI / ಬಾಡಿಗೆ (₹)",bn:"মাসিক EMI / ভাড়া (₹)"},
+  monthlyExp:     {en:"Monthly expenses (fuel/charge + maintenance)",hi:"मासिक खर्च (ईंधन/चार्ज + रखरखाव)",gu:"માસિક ખર્ચ (ઇંધણ/ચાર્જ + જાળવણી)",mr:"मासिक खर्च (इंधन/चार्ज + देखभाल)",ta:"மாதாந்திர செலவுகள் (எரிபொருள்/சார்ஜ் + பராமரிப்பு)",te:"నెలవారీ ఖర్చులు (ఇంధనం/ఛార్జ్ + నిర్వహణ)",kn:"ಮಾಸಿಕ ವೆಚ್ಚ (ಇಂಧನ/ಚಾರ್ಜ್ + ನಿರ್ವಹಣೆ)",bn:"মাসিক খরচ (জ্বালানি/চার্জ + রক্ষণাবেক্ষণ)"},
+  hasInsurance:   {en:"Do you have vehicle insurance?",hi:"क्या आपके पास वाहन बीमा है?",gu:"શું તમારી પાસે વાહન વીમો છે?",mr:"तुमच्याकडे वाहन विमा आहे का?",ta:"உங்களிடம் வாகன காப்பீடு உள்ளதா?",te:"మీకు వాహన బీమా ఉందా?",kn:"ನಿಮಗೆ ವಾಹನ ವಿಮೆ ಇದೆಯೇ?",bn:"আপনার কি যানবাহন বীমা আছে?"},
+  insuranceType:  {en:"Insurance type",hi:"बीमा प्रकार",gu:"વીમા પ્રકાર",mr:"विमा प्रकार",ta:"காப்பீட்டு வகை",te:"బీమా రకం",kn:"ವಿಮೆ ವಿಧ",bn:"বীমার ধরন"},
+  challenges:     {en:"What challenges do you face?",hi:"आपको क्या चुनौतियाँ आती हैं?",gu:"તમને કઈ સમસ્યાઓ આવે છે?",mr:"तुम्हाला काय अडचणी येतात?",ta:"நீங்கள் என்ன சவால்களை எதிர்கொள்கிறீர்கள்?",te:"మీరు ఏ సవాళ్లను ఎదుర్కొంటారు?",kn:"ನೀವು ಯಾವ ಸವಾಲುಗಳನ್ನು ಎದుರಿಸುತ್ತೀರಿ?",bn:"আপনি কী চ্যালেঞ্জের মুখোমুখি হন?"},
+  trainingQ:      {en:"Have you received any RTO / Safety Training?",hi:"क्या आपको RTO / सुरक्षा प्रशिक्षण मिला है?",gu:"શું તમને RTO / સલામતી તાલીમ મળી છે?",mr:"तुम्हाला RTO / सुरक्षा प्रशिक्षण मिळाले आहे का?",ta:"நீங்கள் RTO / பாதுகாப்பு பயிற்சி பெற்றீர்களா?",te:"మీకు RTO / భద్రతా శిక్షణ లభించిందా?",kn:"ನಿಮಗೆ RTO / ಸುರಕ್ಷತಾ ತರಬೇತಿ ಸಿಕ್ಕಿದೆಯೇ?",bn:"আপনি কি RTO / নিরাপত্তা প্রশিক্ষণ পেয়েছেন?"},
+  greeting:       {en:"Have you received any customer handling training?",hi:"क्या आपको ग्राहक सेवा प्रशिक्षण मिला है?",gu:"શું તમને ગ્રાહક સેવા તાલીમ મળી છે?",mr:"तुम्हाला ग्राहक सेवा प्रशिक्षण मिळाले आहे का?",ta:"நீங்கள் வாடிக்கையாளர் சேவை பயிற்சி பெற்றீர்களா?",te:"మీకు కస్టమర్ సర్వీస్ శిక్షణ లభించిందా?",kn:"ನಿಮಗೆ ಗ್ರಾಹಕ ಸೇವಾ ತರಬೇತಿ ಸಿಕ್ಕಿದೆಯೇ?",bn:"আপনি কি গ্রাহক সেবা প্রশিক্ষণ পেয়েছেন?"},
+  appChallenges:  {en:"App / platform challenges you face",hi:"ऐप / प्लेटफ़ॉर्म चुनौतियाँ",gu:"ઍપ / પ્લૅટફૉર્મ સમસ્યાઓ",mr:"ऍप / प्लॅटफॉर्म अडचणी",ta:"ஆப் / தளத்தில் சவால்கள்",te:"యాప్ / ప్లాట్‌ఫారమ్ సవాళ్లు",kn:"ಆ್ಯಪ್ / ಪ್ಲಾಟ್‌ಫಾರ್ಮ್ ಸವಾಲುಗಳು",bn:"অ্যাপ / প্ল্যাটফর্মের চ্যালেঞ্জ"},
+  doneTitle:      {en:"Thank you! 🎉",hi:"धन्यवाद! 🎉",gu:"આભાર! 🎉",mr:"धन्यवाद! 🎉",ta:"நன்றி! 🎉",te:"ధన్యవాదాలు! 🎉",kn:"ಧನ್ಯವಾದ! 🎉",bn:"ধন্যবাদ! 🎉"},
+  doneBody:       {en:"Your response has been recorded. Share this with other delivery partners!",hi:"आपकी प्रतिक्रिया दर्ज की गई। इसे अन्य डिलीवरी पार्टनर के साथ शेयर करें!",gu:"તમારો પ્રતિભાવ નોંધ્યો. અન્ય ડિલિવરી ભાગીદારો સાથે શૅર કરો!",mr:"तुमचा प्रतिसाद नोंदवला. इतर डिलिव्हरी पार्टनरसोबत शेअर करा!",ta:"உங்கள் பதில் பதிவு செய்யப்பட்டது. மற்ற டெலிவரி பார்ட்னர்களுடன் பகிரவும்!",te:"మీ స్పందన నమోదైంది. ఇతర డెలివరీ పార్టనర్లతో పంచుకోండి!",kn:"ನಿಮ್ಮ ಪ್ರತಿಕ್ರಿಯೆ ದಾಖಲಾಗಿದೆ. ಇತರ ಡೆಲಿವರಿ ಪಾರ್ಟ್ನರ್‌ಗಳಿಗೆ ಹಂಚಿಕೊಳ್ಳಿ!",bn:"আপনার উত্তর রেকর্ড করা হয়েছে। অন্য ডেলিভারি পার্টনারদের সাথে শেয়ার করুন!"},
+  shareBtn:       {en:"📲 Share on WhatsApp",hi:"📲 WhatsApp पर शेयर करें",gu:"📲 WhatsApp પર શૅર કરો",mr:"📲 WhatsApp वर शेअर करा",ta:"📲 WhatsApp-ல் பகிரவும்",te:"📲 WhatsApp లో పంచుకోండి",kn:"📲 WhatsApp ನಲ್ಲಿ ಹಂಚಿಕೊಳ್ಳಿ",bn:"📲 WhatsApp এ শেয়ার করুন"},
+};
+
+function tr(key) { return T[key]?.[state.lang] || T[key]?.en || key; }
+
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+const PLATFORMS       = ["Swiggy","Zomato","Blinkit","Zepto","Amazon","Flipkart","Dunzo","Shadowfax","Delhivery","Other"];
+const VEHICLE_TYPES   = ["2-Wheeler","3-Wheeler","4-Wheeler","Cargo Bike"];
+const FUEL_TYPES      = ["EV (Electric)","Petrol","CNG","Diesel"];
+const SPEEDS          = ["< 20 km/h","20–30 km/h","30–40 km/h","> 40 km/h"];
+const CHARGING        = ["Home charging","Office/Hub charging","Public charging station","Battery swapping"];
+const CHARGE_TIMES    = ["< 1 hour","1–2 hours","2–4 hours","> 4 hours"];
+const COST_RANGES     = ["₹0–2,000","₹2,001–5,000","₹5,001–10,000","> ₹10,000"];
+const OWNERSHIP_OPTS  = ["Self-owned","Company provided","Rented/Leased","Loan (EMI)"];
+const YES_NO          = ["Yes","No"];
+const INS_TYPES       = ["Third Party Only","Comprehensive","Not sure"];
+const CHALLENGES_LIST = ["Long delivery distances","Battery running out","Slow charging","App issues","Traffic","Customer unavailability","Low earnings","Road conditions","Extreme weather","Heavy loads"];
+const APP_CHALLENGES  = ["App crashes frequently","Order allocation issues","Navigation errors","Payment delays","Poor customer support","Low ratings unfairly","Too many cancellations","No offline mode"];
+
+const STATES_CITIES = {
+  "Andhra Pradesh":["Visakhapatnam","Vijayawada","Guntur","Nellore","Tirupati","Other"],
+  "Assam":["Guwahati","Silchar","Dibrugarh","Jorhat","Nagaon","Other"],
+  "Bihar":["Patna","Gaya","Bhagalpur","Muzaffarpur","Darbhanga","Other"],
+  "Delhi":["New Delhi","Dwarka","Rohini","Noida (NCR)","Gurugram (NCR)","Other"],
+  "Gujarat":["Ahmedabad","Surat","Vadodara","Rajkot","Gandhinagar","Other"],
+  "Haryana":["Gurugram","Faridabad","Panipat","Ambala","Hisar","Other"],
+  "Jharkhand":["Ranchi","Jamshedpur","Dhanbad","Bokaro","Hazaribagh","Other"],
+  "Karnataka":["Bengaluru","Mysuru","Hubli","Mangaluru","Belagavi","Other"],
+  "Kerala":["Thiruvananthapuram","Kochi","Kozhikode","Thrissur","Kollam","Other"],
+  "Madhya Pradesh":["Bhopal","Indore","Gwalior","Jabalpur","Ujjain","Other"],
+  "Maharashtra":["Mumbai","Pune","Nagpur","Nashik","Aurangabad","Other"],
+  "Odisha":["Bhubaneswar","Cuttack","Rourkela","Berhampur","Sambalpur","Other"],
+  "Punjab":["Ludhiana","Amritsar","Jalandhar","Patiala","Bathinda","Other"],
+  "Rajasthan":["Jaipur","Jodhpur","Udaipur","Kota","Ajmer","Other"],
+  "Tamil Nadu":["Chennai","Coimbatore","Madurai","Tiruchirappalli","Salem","Other"],
+  "Telangana":["Hyderabad","Warangal","Nizamabad","Khammam","Karimnagar","Other"],
+  "Uttar Pradesh":["Lucknow","Kanpur","Agra","Varanasi","Prayagraj","Other"],
+  "Uttarakhand":["Dehradun","Haridwar","Roorkee","Haldwani","Nainital","Other"],
+  "West Bengal":["Kolkata","Howrah","Siliguri","Durgapur","Asansol","Other"],
+  "Other":["Other"],
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const state = {
+  step: 0,
+  lang: "en",
+  refCode: Math.random().toString(36).slice(2,8).toUpperCase(),
+  errors: {},
+  form: {
+    name:"", phone:"", stateVal:"", city:"", otherCity:"",
+    platforms:[], otherPlatform:"",
+    vehicleType:"", currentVehicle:"", fuelType:"",
+    evSpeed:"", chargingMethod:"", chargeTime:"",
+    ownership:"", rental:"",
+    monthlyExp:"", hasInsurance:"", insuranceType:"",
+    challenges:[], trainingReceived:"", greeting:"",
+    appChallenges:[],
+  }
+};
+
+// ─── SPEECH ───────────────────────────────────────────────────────────────────
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const langCode = LANGUAGES[state.lang].code;
+  function doSpeak() {
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.85;
+    const voices = window.speechSynthesis.getVoices();
+    const prefix = langCode.split("-")[0].toLowerCase();
+    const match = voices.find(v => v.lang.toLowerCase() === langCode.toLowerCase())
+                || voices.find(v => v.lang.toLowerCase().startsWith(prefix));
+    if (match) { u.voice = match; u.lang = match.lang; } else { u.lang = langCode; }
+    window.speechSynthesis.speak(u);
+  }
+  if (window.speechSynthesis.getVoices().length > 0) { doSpeak(); }
+  else {
+    window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.onvoiceschanged = null; doSpeak(); };
+    setTimeout(() => { if (window.speechSynthesis.getVoices().length > 0) doSpeak(); }, 300);
+  }
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function el(tag, attrs={}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v;
+    else if (k === 'for') e.htmlFor = v;
+    else if (k.startsWith('on')) e[k] = v;
+    else e.setAttribute(k, v);
+  }
+  for (const c of children) {
+    if (c == null) continue;
+    e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return e;
+}
+
+function listenBtn(text) {
+  const btn = el('button', {class:'listen-btn'}, tr('listen'));
+  btn.onclick = () => {
+    btn.disabled = true;
+    btn.textContent = '🔊 Speaking…';
+    speak(text);
+    setTimeout(() => { btn.disabled = false; btn.textContent = tr('listen'); }, Math.max(1500, text.length * 80));
+  };
+  return btn;
+}
+
+function chips(options, fieldKey, multi=false) {
+  const wrap = el('div', {class:'chips'});
+  options.forEach(opt => {
+    const chip = el('button', {class:'chip'}, opt);
+    const val = state.form[fieldKey];
+    if (multi ? val.includes(opt) : val === opt) chip.classList.add('active');
+    chip.onclick = () => {
+      if (multi) {
+        const arr = state.form[fieldKey];
+        state.form[fieldKey] = arr.includes(opt) ? arr.filter(x=>x!==opt) : [...arr, opt];
+      } else {
+        state.form[fieldKey] = opt;
+      }
+      delete state.errors[fieldKey];
+      render();
+    };
+    wrap.appendChild(chip);
+  });
+  return wrap;
+}
+
+function errMsg(field) {
+  if (!state.errors[field]) return null;
+  return el('div', {class:'err'}, state.errors[field]);
+}
+
+function progress(current) {
+  const bar = el('div', {class:'progress-bar'});
+  for (let i=1; i<=4; i++) {
+    const dot = el('div', {class:'progress-dot'});
+    if (i < current) dot.classList.add('done');
+    else if (i === current) dot.classList.add('active');
+    bar.appendChild(dot);
+  }
+  return bar;
+}
+
+function textInput(field, placeholder, type='text') {
+  const inp = el('input', {type, placeholder});
+  inp.value = state.form[field] || '';
+  if (state.errors[field]) inp.classList.add('error');
+  inp.oninput = e => { state.form[field] = e.target.value; delete state.errors[field]; };
+  return inp;
+}
+
+// ─── VALIDATE ─────────────────────────────────────────────────────────────────
+function validate(s) {
+  const e = {};
+  if (s===1) {
+    if (!state.form.name.trim()) e.name = "Required";
+    if (!/^\d{10}$/.test(state.form.phone)) e.phone = "10-digit number required";
+    if (!state.form.stateVal) e.stateVal = "Required";
+    if (!state.form.city) e.city = "Required";
+    if (state.form.city === "Other" && !state.form.otherCity.trim()) e.otherCity = "Please enter your city";
+    if (!state.form.platforms.length) e.platforms = "Select at least one";
+    if (state.form.platforms.includes("Other") && !state.form.otherPlatform.trim()) e.otherPlatform = "Please specify your platform";
+  }
+  if (s===2) {
+    if (!state.form.vehicleType) e.vehicleType = "Required";
+    if (!state.form.fuelType) e.fuelType = "Required";
+    if (state.form.fuelType==="EV (Electric)" && !state.form.evSpeed) e.evSpeed = "Required";
+    if (state.form.fuelType==="EV (Electric)" && !state.form.chargingMethod) e.chargingMethod = "Required";
+    if (state.form.fuelType==="EV (Electric)" && !state.form.chargeTime) e.chargeTime = "Required";
+  }
+  if (s===3) {
+    if (!state.form.ownership) e.ownership = "Required";
+    if (!state.form.monthlyExp) e.monthlyExp = "Required";
+    if (!state.form.hasInsurance) e.hasInsurance = "Required";
+  }
+  if (s===4) {
+    if (!state.form.challenges.length) e.challenges = "Select at least one";
+    if (!state.form.greeting) e.greeting = "Required";
+  }
+  return e;
+}
+
+// ─── SUBMIT ───────────────────────────────────────────────────────────────────
+async function submitForm() {
+  const e = validate(4);
+  if (Object.keys(e).length) { state.errors = e; render(); return; }
+  const f = state.form;
+  const payload = {
+    timestamp: new Date().toISOString(),
+    refCode: state.refCode,
+    language: state.lang,
+    name: f.name, phone: f.phone,
+    state: f.stateVal,
+    city: f.city === "Other" ? f.otherCity : f.city,
+    platforms: f.platforms.map(p => p==="Other" && f.otherPlatform ? f.otherPlatform : p).join(", "),
+    vehicleType: f.vehicleType,
+    currentVehicle: f.currentVehicle,
+    fuelType: f.fuelType,
+    evSpeed: f.evSpeed, chargingMethod: f.chargingMethod, chargeTime: f.chargeTime,
+    ownership: f.ownership, emiRent: f.rental,
+    monthlyExpenses: f.monthlyExp,
+    hasInsurance: f.hasInsurance, insuranceType: f.insuranceType,
+    challenges: f.challenges.join(", "),
+    rtoTraining: f.trainingReceived,
+    customerTraining: f.greeting,
+    appChallenges: f.appChallenges.join(", "),
+  };
+  if (SHEET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
+    try { await fetch(SHEET_URL, { method:"POST", body: JSON.stringify(payload) }); } catch(err) { console.error(err); }
+  }
+  state.step = 5;
+  render();
+}
+
+// ─── RENDER STEPS ─────────────────────────────────────────────────────────────
+function renderStep0() {
+  const frag = document.createDocumentFragment();
+  frag.appendChild(el('div', {class:'title'}, '🚗 Road Warrior EV Challenge'));
+  frag.appendChild(el('div', {class:'subtitle'}, 'Select your language / अपनी भाषा चुनें'));
+  const grid = el('div', {class:'lang-grid'});
+  Object.entries(LANGUAGES).forEach(([k, v]) => {
+    const btn = el('button', {class: 'lang-chip' + (state.lang===k?' active':'')}, v.native);
+    btn.onclick = () => { state.lang = k; render(); };
+    grid.appendChild(btn);
+  });
+  frag.appendChild(grid);
+  const nextBtn = el('button', {class:'btn'}, tr('next') + ' →');
+  nextBtn.onclick = () => { state.step = 1; render(); };
+  frag.appendChild(nextBtn);
+  return frag;
+}
+
+function renderStep1() {
+  const frag = document.createDocumentFragment();
+  frag.appendChild(el('div', {class:'title'}, tr('title')));
+  frag.appendChild(el('div', {class:'subtitle'}, tr('subtitle')));
+  frag.appendChild(progress(1));
+
+  // Name
+  const nameGrp = el('div', {class:'group'});
+  nameGrp.appendChild(listenBtn(tr('name')));
+  nameGrp.appendChild(el('label', {}, tr('name')));
+  nameGrp.appendChild(textInput('name', 'Enter your name'));
+  if (state.errors.name) nameGrp.appendChild(errMsg('name'));
+  frag.appendChild(nameGrp);
+
+  // Phone
+  const phoneGrp = el('div', {class:'group'});
+  phoneGrp.appendChild(listenBtn(tr('phone')));
+  phoneGrp.appendChild(el('label', {}, tr('phone')));
+  phoneGrp.appendChild(textInput('phone', '10-digit mobile number', 'tel'));
+  if (state.errors.phone) phoneGrp.appendChild(errMsg('phone'));
+  frag.appendChild(phoneGrp);
+
+  // State + City row
+  const row = el('div', {class:'row group'});
+
+  const stateDiv = el('div', {});
+  stateDiv.appendChild(el('label', {}, tr('state')));
+  const stateSel = el('select');
+  stateSel.appendChild(el('option', {value:''}, 'Select state'));
+  Object.keys(STATES_CITIES).forEach(s => {
+    const opt = el('option', {value:s}, s);
+    if (state.form.stateVal === s) opt.selected = true;
+    stateSel.appendChild(opt);
+  });
+  if (state.errors.stateVal) stateSel.classList.add('error');
+  stateSel.onchange = e => { state.form.stateVal = e.target.value; state.form.city = ''; state.form.otherCity = ''; delete state.errors.stateVal; render(); };
+  stateDiv.appendChild(stateSel);
+  if (state.errors.stateVal) stateDiv.appendChild(errMsg('stateVal'));
+  row.appendChild(stateDiv);
+
+  const cityDiv = el('div', {});
+  cityDiv.appendChild(el('label', {}, tr('city')));
+  const citySel = el('select');
+  if (!state.form.stateVal) citySel.setAttribute('disabled','');
+  citySel.appendChild(el('option', {value:''}, 'Select city'));
+  (STATES_CITIES[state.form.stateVal] || []).forEach(c => {
+    const opt = el('option', {value:c}, c);
+    if (state.form.city === c) opt.selected = true;
+    citySel.appendChild(opt);
+  });
+  if (state.errors.city) citySel.classList.add('error');
+  citySel.onchange = e => { state.form.city = e.target.value; state.form.otherCity = ''; delete state.errors.city; render(); };
+  cityDiv.appendChild(citySel);
+  if (state.errors.city) cityDiv.appendChild(errMsg('city'));
+  if (state.form.city === 'Other') {
+    const oi = textInput('otherCity', 'Enter your city name… (required)');
+    oi.classList.add('other-input');
+    if (state.errors.otherCity) oi.classList.add('error');
+    cityDiv.appendChild(oi);
+    if (state.errors.otherCity) cityDiv.appendChild(errMsg('otherCity'));
+  }
+  row.appendChild(cityDiv);
+  frag.appendChild(row);
+
+  // Platforms
+  const platGrp = el('div', {class:'group'});
+  platGrp.appendChild(listenBtn(tr('platform')));
+  platGrp.appendChild(el('label', {}, tr('platform')));
+  platGrp.appendChild(chips(PLATFORMS, 'platforms', true));
+  if (state.form.platforms.includes('Other')) {
+    const oi = textInput('otherPlatform', 'Please specify your platform… (required)');
+    oi.classList.add('other-input');
+    if (state.errors.otherPlatform) oi.classList.add('error');
+    platGrp.appendChild(oi);
+    if (state.errors.otherPlatform) platGrp.appendChild(errMsg('otherPlatform'));
+  }
+  if (state.errors.platforms) platGrp.appendChild(errMsg('platforms'));
+  frag.appendChild(platGrp);
+
+  // Nav
+  const nav = el('div', {class:'nav-row'});
+  const backBtn = el('button', {class:'btn-ghost'}, tr('prev'));
+  backBtn.onclick = () => { state.step = 0; render(); };
+  const nextBtn = el('button', {class:'btn'}, tr('next') + ' →');
+  nextBtn.onclick = () => { const e=validate(1); if(Object.keys(e).length){state.errors=e;render();return;} state.step=2; window.scrollTo(0,0); render(); };
+  nav.appendChild(backBtn); nav.appendChild(nextBtn);
+  frag.appendChild(nav);
+  return frag;
+}
+
+function renderStep2() {
+  const frag = document.createDocumentFragment();
+  frag.appendChild(el('div', {class:'title'}, tr('title')));
+  frag.appendChild(progress(2));
+
+  // Vehicle type + model merged
+  const vGrp = el('div', {class:'group'});
+  vGrp.appendChild(listenBtn(tr('currentVehicle')));
+  vGrp.appendChild(el('label', {}, tr('currentVehicle')));
+  vGrp.appendChild(chips(VEHICLE_TYPES, 'vehicleType'));
+  if (state.errors.vehicleType) vGrp.appendChild(errMsg('vehicleType'));
+  const modelInp = textInput('currentVehicle', 'e.g. Honda Activa, Tata Ace, TVS Jupiter…');
+  modelInp.classList.add('other-input');
+  vGrp.appendChild(modelInp);
+  frag.appendChild(vGrp);
+
+  // Fuel
+  const fGrp = el('div', {class:'group'});
+  fGrp.appendChild(listenBtn(tr('fuelType')));
+  fGrp.appendChild(el('label', {}, tr('fuelType')));
+  fGrp.appendChild(chips(FUEL_TYPES, 'fuelType'));
+  if (state.errors.fuelType) fGrp.appendChild(errMsg('fuelType'));
+  frag.appendChild(fGrp);
+
+  // EV-only fields
+  if (state.form.fuelType === 'EV (Electric)') {
+    const spGrp = el('div', {class:'group'});
+    spGrp.appendChild(listenBtn(tr('evSpeed')));
+    spGrp.appendChild(el('label', {}, tr('evSpeed')));
+    spGrp.appendChild(chips(SPEEDS, 'evSpeed'));
+    if (state.errors.evSpeed) spGrp.appendChild(errMsg('evSpeed'));
+    frag.appendChild(spGrp);
+
+    const chGrp = el('div', {class:'group'});
+    chGrp.appendChild(listenBtn(tr('chargingMethod')));
+    chGrp.appendChild(el('label', {}, tr('chargingMethod')));
+    chGrp.appendChild(chips(CHARGING, 'chargingMethod'));
+    if (state.errors.chargingMethod) chGrp.appendChild(errMsg('chargingMethod'));
+    frag.appendChild(chGrp);
+
+    const ctGrp = el('div', {class:'group'});
+    ctGrp.appendChild(listenBtn(tr('chargeTime')));
+    ctGrp.appendChild(el('label', {}, tr('chargeTime')));
+    ctGrp.appendChild(chips(CHARGE_TIMES, 'chargeTime'));
+    if (state.errors.chargeTime) ctGrp.appendChild(errMsg('chargeTime'));
+    frag.appendChild(ctGrp);
+  }
+
+  const nav = el('div', {class:'nav-row'});
+  const backBtn = el('button', {class:'btn-ghost'}, tr('prev'));
+  backBtn.onclick = () => { state.step=1; window.scrollTo(0,0); render(); };
+  const nextBtn = el('button', {class:'btn'}, tr('next') + ' →');
+  nextBtn.onclick = () => { const e=validate(2); if(Object.keys(e).length){state.errors=e;render();return;} state.step=3; window.scrollTo(0,0); render(); };
+  nav.appendChild(backBtn); nav.appendChild(nextBtn);
+  frag.appendChild(nav);
+  return frag;
+}
+
+function renderStep3() {
+  const frag = document.createDocumentFragment();
+  frag.appendChild(el('div', {class:'title'}, tr('title')));
+  frag.appendChild(progress(3));
+
+  // Ownership
+  const owGrp = el('div', {class:'group'});
+  owGrp.appendChild(listenBtn(tr('ownership')));
+  owGrp.appendChild(el('label', {}, tr('ownership')));
+  owGrp.appendChild(chips(OWNERSHIP_OPTS, 'ownership'));
+  if (state.errors.ownership) owGrp.appendChild(errMsg('ownership'));
+  frag.appendChild(owGrp);
+
+  // EMI/Rent — only for Rented/Leased or Loan (EMI)
+  if (state.form.ownership === 'Rented/Leased' || state.form.ownership === 'Loan (EMI)') {
+    const rGrp = el('div', {class:'group'});
+    const lbl = state.form.ownership === 'Loan (EMI)' ? 'Monthly EMI (₹)' : 'Monthly Rent (₹)';
+    rGrp.appendChild(el('label', {}, lbl));
+    rGrp.appendChild(textInput('rental', state.form.ownership === 'Loan (EMI)' ? '₹ EMI per month' : '₹ rent per month'));
+    frag.appendChild(rGrp);
+  }
+
+  // Monthly expenses
+  const meGrp = el('div', {class:'group'});
+  meGrp.appendChild(el('label', {}, tr('monthlyExp')));
+  meGrp.appendChild(chips(COST_RANGES, 'monthlyExp'));
+  if (state.errors.monthlyExp) meGrp.appendChild(errMsg('monthlyExp'));
+  frag.appendChild(meGrp);
+
+  // Insurance
+  const insGrp = el('div', {class:'group'});
+  insGrp.appendChild(listenBtn(tr('hasInsurance')));
+  insGrp.appendChild(el('label', {}, tr('hasInsurance')));
+  insGrp.appendChild(chips(YES_NO, 'hasInsurance'));
+  if (state.errors.hasInsurance) insGrp.appendChild(errMsg('hasInsurance'));
+  frag.appendChild(insGrp);
+
+  if (state.form.hasInsurance === 'Yes') {
+    const itGrp = el('div', {class:'group'});
+    itGrp.appendChild(el('label', {}, tr('insuranceType')));
+    itGrp.appendChild(chips(INS_TYPES, 'insuranceType'));
+    frag.appendChild(itGrp);
+  }
+
+  const nav = el('div', {class:'nav-row'});
+  const backBtn = el('button', {class:'btn-ghost'}, tr('prev'));
+  backBtn.onclick = () => { state.step=2; window.scrollTo(0,0); render(); };
+  const nextBtn = el('button', {class:'btn'}, tr('next') + ' →');
+  nextBtn.onclick = () => { const e=validate(3); if(Object.keys(e).length){state.errors=e;render();return;} state.step=4; window.scrollTo(0,0); render(); };
+  nav.appendChild(backBtn); nav.appendChild(nextBtn);
+  frag.appendChild(nav);
+  return frag;
+}
+
+function renderStep4() {
+  const frag = document.createDocumentFragment();
+  frag.appendChild(el('div', {class:'title'}, tr('title')));
+  frag.appendChild(progress(4));
+
+  const chGrp = el('div', {class:'group'});
+  chGrp.appendChild(listenBtn(tr('challenges')));
+  chGrp.appendChild(el('label', {}, tr('challenges')));
+  chGrp.appendChild(chips(CHALLENGES_LIST, 'challenges', true));
+  if (state.errors.challenges) chGrp.appendChild(errMsg('challenges'));
+  frag.appendChild(chGrp);
+
+  const trGrp = el('div', {class:'group'});
+  trGrp.appendChild(listenBtn(tr('trainingQ')));
+  trGrp.appendChild(el('label', {}, tr('trainingQ')));
+  trGrp.appendChild(chips(YES_NO, 'trainingReceived'));
+  frag.appendChild(trGrp);
+
+  const grGrp = el('div', {class:'group'});
+  grGrp.appendChild(listenBtn(tr('greeting')));
+  grGrp.appendChild(el('label', {}, tr('greeting')));
+  grGrp.appendChild(chips(YES_NO, 'greeting'));
+  if (state.errors.greeting) grGrp.appendChild(errMsg('greeting'));
+  frag.appendChild(grGrp);
+
+  const apGrp = el('div', {class:'group'});
+  apGrp.appendChild(listenBtn(tr('appChallenges')));
+  apGrp.appendChild(el('label', {}, tr('appChallenges')));
+  apGrp.appendChild(chips(APP_CHALLENGES, 'appChallenges', true));
+  frag.appendChild(apGrp);
+
+  const nav = el('div', {class:'nav-row'});
+  const backBtn = el('button', {class:'btn-ghost'}, tr('prev'));
+  backBtn.onclick = () => { state.step=3; window.scrollTo(0,0); render(); };
+  const submitBtn = el('button', {class:'btn'}, tr('submit') + ' ✓');
+  submitBtn.onclick = submitForm;
+  nav.appendChild(backBtn); nav.appendChild(submitBtn);
+  frag.appendChild(nav);
+  return frag;
+}
+
+function renderStep5() {
+  const shareText = encodeURIComponent('🚗 I just completed the Road Warrior EV Challenge!\nJoin me: https://YOUR_USERNAME.github.io/roadwarrior/?ref=' + state.refCode);
+  const frag = document.createDocumentFragment();
+  frag.appendChild(el('div', {class:'done-emoji'}, '🎉'));
+  frag.appendChild(el('div', {class:'done-title'}, tr('doneTitle')));
+  frag.appendChild(el('div', {class:'done-body'}, tr('doneBody')));
+  const refBox = el('div', {class:'ref-box'}, 'Your Referral Code');
+  refBox.appendChild(el('span', {class:'ref-code'}, state.refCode));
+  frag.appendChild(refBox);
+  const waLink = el('a', {class:'btn-green', href:`https://wa.me/?text=${shareText}`, target:'_blank'}, tr('shareBtn'));
+  frag.appendChild(waLink);
+  const newBtn = el('button', {class:'btn-ghost'}, 'New Response');
+  newBtn.style.width = '100%';
+  newBtn.onclick = () => {
+    state.step = 0; state.lang = 'en'; state.errors = {};
+    Object.keys(state.form).forEach(k => {
+      state.form[k] = Array.isArray(state.form[k]) ? [] : '';
+    });
+    render();
+  };
+  frag.appendChild(newBtn);
+  return frag;
+}
+
+// ─── MAIN RENDER ──────────────────────────────────────────────────────────────
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  let content;
+  switch(state.step) {
+    case 0: content = renderStep0(); break;
+    case 1: content = renderStep1(); break;
+    case 2: content = renderStep2(); break;
+    case 3: content = renderStep3(); break;
+    case 4: content = renderStep4(); break;
+    case 5: content = renderStep5(); break;
+  }
+  app.appendChild(content);
+}
+
+render();
+</script>
+</body>
+</html>
