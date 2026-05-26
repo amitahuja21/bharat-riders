@@ -483,6 +483,15 @@ async function submitForm() {
   const e = validate(4);
   if (Object.keys(e).length) { state.errors = e; render(); return; }
   const f = state.form;
+
+  // ── DUPLICATE CHECK via localStorage ──────────────────────
+  const cleanPhone = f.phone.replace(/\D/g, '');
+  const submitted = JSON.parse(localStorage.getItem('rw_ev_submitted') || '[]');
+  if (submitted.includes(cleanPhone)) {
+    alert('⚠️ This phone number has already been submitted. Only one response per person is allowed.');
+    return;
+  }
+
   const payload = {
     timestamp: new Date().toISOString(),
     refCode: state.refCode,
@@ -504,20 +513,18 @@ async function submitForm() {
     customerTraining: f.greeting,
     appChallenges: f.appChallenges.join(", "),
   };
+
   if (SHEET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
     try {
       const params = new URLSearchParams({ action: 'submit', ...payload });
-      const res = await fetch(`${SHEET_URL}?${params}`);
-      const text = await res.text();
-      let json = {};
-      try { json = JSON.parse(text); } catch(e) {}
-
-      if (json.duplicate) {
-        alert('⚠️ This phone number has already been submitted. Only one response per person is allowed.');
-        return;
-      }
+      await fetch(`${SHEET_URL}?${params}`);
     } catch(err) { console.error(err); }
   }
+
+  // Save phone after successful submission so duplicates are blocked next time
+  submitted.push(cleanPhone);
+  localStorage.setItem('rw_ev_submitted', JSON.stringify(submitted));
+
   state.step = 5;
   render();
 }
