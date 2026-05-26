@@ -19,45 +19,45 @@ function doGet(e) {
 
   // ── 0. FORM SUBMISSION → Save to Responses sheet ──────────
   if (p.action === 'submit') {
-  try {
-    const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
-    const sheet = getOrCreateSheet(ss, 'Responses', [
-      'Timestamp','Ref Code','Referred By','Language',
-      'Name','Phone','State','City','Platforms',
-      'Vehicle Type','Current Vehicle','Fuel Type',
-      'EV Speed','Charging Method','Charge Time',
-      'Ownership','EMI/Rent','Monthly Expenses',
-      'Has Insurance','Insurance Type','Challenges',
-      'RTO Training','Customer Training','App Challenges'
-    ]);
+    try {
+      const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
+      const sheet = getOrCreateSheet(ss, 'Responses', [
+        'Timestamp','Ref Code','Referred By','Language',
+        'Name','Phone','State','City','Platforms',
+        'Vehicle Type','Current Vehicle','Fuel Type',
+        'EV Speed','Charging Method','Charge Time',
+        'Ownership','EMI/Rent','Monthly Expenses',
+        'Has Insurance','Insurance Type','Challenges',
+        'RTO Training','Customer Training','App Challenges'
+      ]);
 
-    // ── CHECK DUPLICATE PHONE ──────────────────────────────
-    const phone = (p.phone || '').replace(/\D/g, '');
-    if (phone) {
-      const rows = sheet.getDataRange().getValues();
-      for (let i = 1; i < rows.length; i++) {
-        if (String(rows[i][5]).replace(/\D/g, '') === phone) {
-          return jsonResponse({ success: false, duplicate: true, message: 'You have already submitted a response.' });
+      // ── CHECK DUPLICATE PHONE ──────────────────────────────
+      const phone = (p.phone || '').replace(/\D/g, '');
+      if (phone && sheet.getLastRow() > 1) {
+        const rows = sheet.getDataRange().getValues();
+        for (let i = 1; i < rows.length; i++) {
+          if (String(rows[i][5]).replace(/\D/g, '') === phone) {
+            return jsonResponse({ success: false, duplicate: true, message: 'Already submitted.' });
+          }
         }
       }
-    }
 
-    sheet.appendRow([
-      p.timestamp || new Date().toISOString(),
-      p.refCode || '', p.referredBy || '', p.language || 'en',
-      p.name || '', p.phone || '', p.state || '', p.city || '',
-      p.platforms || '', p.vehicleType || '', p.currentVehicle || '',
-      p.fuelType || '', p.evSpeed || '', p.chargingMethod || '',
-      p.chargeTime || '', p.ownership || '', p.emiRent || '',
-      p.monthlyExpenses || '', p.hasInsurance || '', p.insuranceType || '',
-      p.challenges || '', p.rtoTraining || '', p.customerTraining || '',
-      p.appChallenges || ''
-    ]);
-    return jsonResponse({ success: true });
-  } catch(err) {
-    return jsonResponse({ success: false, message: err.toString() });
+      sheet.appendRow([
+        p.timestamp || new Date().toISOString(),
+        p.refCode || '', p.referredBy || '', p.language || 'en',
+        p.name || '', p.phone || '', p.state || '', p.city || '',
+        p.platforms || '', p.vehicleType || '', p.currentVehicle || '',
+        p.fuelType || '', p.evSpeed || '', p.chargingMethod || '',
+        p.chargeTime || '', p.ownership || '', p.emiRent || '',
+        p.monthlyExpenses || '', p.hasInsurance || '', p.insuranceType || '',
+        p.challenges || '', p.rtoTraining || '', p.customerTraining || '',
+        p.appChallenges || ''
+      ]);
+      return jsonResponse({ success: true });
+    } catch(err) {
+      return jsonResponse({ success: false, message: err.toString() });
+    }
   }
-}
 
   // ── 1. AFFILIATE LINK CLICK → Log + Redirect ──────────────
   if (p.ref) {
