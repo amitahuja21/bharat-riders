@@ -508,15 +508,15 @@ async function submitForm() {
     try {
       const params = new URLSearchParams({ action: 'submit', ...payload });
       const res = await fetch(`${SHEET_URL}?${params}`);
-      const json = await res.json();
+      const text = await res.text();
+      let json = {};
+      try { json = JSON.parse(text); } catch(e) {}
 
-      // Block duplicate phone numbers
       if (json.duplicate) {
         alert('⚠️ This phone number has already been submitted. Only one response per person is allowed.');
-        return; // stops here, does NOT go to Thank You screen
+        return;
       }
     } catch(err) { console.error(err); }
-  
   }
   state.step = 5;
   render();
