@@ -332,10 +332,14 @@ const STATES_CITIES = {
 };
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
+// Read referral code from URL if someone clicked an affiliate link
+const _urlRef = new URLSearchParams(window.location.search).get('ref') || '';
+
 const state = {
   step: 0,
   lang: "en",
   refCode: Math.random().toString(36).slice(2,8).toUpperCase(),
+  referredBy: _urlRef.toUpperCase(),   // who referred this person
   errors: {},
   form: {
     name:"", phone:"", stateVal:"", city:"", otherCity:"",
@@ -482,6 +486,7 @@ async function submitForm() {
   const payload = {
     timestamp: new Date().toISOString(),
     refCode: state.refCode,
+    referredBy: state.referredBy,
     language: state.lang,
     name: f.name, phone: f.phone,
     state: f.stateVal,
@@ -500,7 +505,11 @@ async function submitForm() {
     appChallenges: f.appChallenges.join(", "),
   };
   if (SHEET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
-    try { await fetch(SHEET_URL, { method:"POST", body: JSON.stringify(payload) }); } catch(err) { console.error(err); }
+    try {
+      // Using GET instead of POST to avoid CORS block from GitHub Pages
+      const params = new URLSearchParams({ action: 'submit', ...payload });
+      await fetch(`${SHEET_URL}?${params}`);
+    } catch(err) { console.error(err); }
   }
   state.step = 5;
   render();
@@ -768,7 +777,7 @@ function renderStep4() {
 }
 
 function renderStep5() {
-  const shareText = encodeURIComponent('🚗 I just completed the Road Warrior EV Challenge!\nJoin me: https://amitahuja21.github.io/bharatriders/?ref=' + state.refCode);
+  const shareText = encodeURIComponent('🚗 I just completed the Road Warrior EV Challenge!\nJoin me: https://amitahuja21.github.io/bharat-riders/?ref=' + state.refCode);
   const frag = document.createDocumentFragment();
   frag.appendChild(el('div', {class:'done-emoji'}, '🎉'));
   frag.appendChild(el('div', {class:'done-title'}, tr('doneTitle')));
