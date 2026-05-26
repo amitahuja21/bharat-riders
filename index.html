@@ -506,10 +506,17 @@ async function submitForm() {
   };
   if (SHEET_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
     try {
-      // Using GET instead of POST to avoid CORS block from GitHub Pages
       const params = new URLSearchParams({ action: 'submit', ...payload });
-      await fetch(`${SHEET_URL}?${params}`);
+      const res = await fetch(`${SHEET_URL}?${params}`);
+      const json = await res.json();
+
+      // Block duplicate phone numbers
+      if (json.duplicate) {
+        alert('⚠️ This phone number has already been submitted. Only one response per person is allowed.');
+        return; // stops here, does NOT go to Thank You screen
+      }
     } catch(err) { console.error(err); }
+  
   }
   state.step = 5;
   render();
