@@ -857,96 +857,56 @@ function submitFuel(){
 }
 
 async function submitForm(){
-  submitting=true; errMsg=""; render();
+  submitting=true; errMsg=""; render(false);
 
-  if(SHEET_URL==="YOUR_APPS_SCRIPT_URL_HERE"){
-    submitting=false; goScreen("done"); return;
-  }
-
-  // ── Duplicate phone check ─────────────────────────────────────────────────
-  try{
-    const chk = await fetch(SHEET_URL+"?action=checkPhone&phone="+encodeURIComponent(fd.phone));
-    if(chk.ok){
-      const d = await chk.json();
-      if(d.exists){
-        submitting=false;
-        errMsg="⚠️ This mobile number is already registered. Each number can only be submitted once.";
-        render(); return;
-      }
-    }
-  }catch(e){}
-
-  // ── Build payload ─────────────────────────────────────────────────────────
-  const payload={
-    Timestamp  : new Date().toLocaleString("en-IN"),
-    RefCode    : refCode,
-    Language   : lang,
-    Name       : fd.name,
-    Phone      : fd.phone,
-    State      : fd.state,
-    City       : fd.city==="Other"?fd.cityOther:fd.city,
-    Platforms  : fd.platforms.map(p=>p===t().platforms[t().platforms.length-1]?fd.platformOther||p:p).join(", "),
-    VehicleType: fd.vehicleType,
-    Ownership  : fd.ownership,
-    Rental     : fd.rental,
-    FuelType   : fd.fuelType,
-    EVSpeed    : fd.evSpeed,
-    Charging   : fd.charging,
-    ChargeTime : fd.chargeTime,
-    MonthlyCost: fd.vehicleCost,
-    Insurance  : fd.hasInsurance,
-    PersonalAccident: fd.personalAccident,
-    InsuranceType: fd.insuranceType,
-    Challenges : fd.challenges.join(", "),
-    OtherChallenges: fd.otherChallenges.join(", "),
-  };
-
-  // ── MOST RELIABLE: Hidden form POST via iframe ────────────────────────────
-  // This bypasses all CORS issues — works 100% with Google Apps Script
-  await new Promise((resolve)=>{
-    try{
-      // Create hidden iframe
-      let ifr = document.getElementById("_submit_frame");
-      if(!ifr){
-        ifr = document.createElement("iframe");
-        ifr.id   = "_submit_frame";
-        ifr.name = "_submit_frame";
-        ifr.style.cssText = "display:none;width:0;height:0;border:0;position:absolute";
-        document.body.appendChild(ifr);
-      }
-
-      // Create hidden form targeting the iframe
-      const frm = document.createElement("form");
-      frm.method  = "POST";
-      frm.action  = SHEET_URL;
-      frm.target  = "_submit_frame";
-      frm.style.display = "none";
-      frm.enctype = "application/x-www-form-urlencoded";
-
-      // Add each field as a hidden input
-      Object.entries(payload).forEach(([k,v])=>{
-        const inp = document.createElement("input");
-        inp.type  = "hidden";
-        inp.name  = k;
-        inp.value = v || "";
-        frm.appendChild(inp);
-      });
-
-      // Also send full JSON in one field for easy parsing
-      const jsonInp = document.createElement("input");
-      jsonInp.type  = "hidden";
-      jsonInp.name  = "jsonData";
-      jsonInp.value = JSON.stringify(payload);
-      frm.appendChild(jsonInp);
-
-      document.body.appendChild(frm);
-      frm.submit();
-      setTimeout(()=>{ document.body.removeChild(frm); resolve(); }, 2000);
-    }catch(e){
-      console.error("Form submit failed:", e);
-      resolve();
-    }
+  // ── Build params matching Apps Script doGet expected fields ───────────────
+  const params = new URLSearchParams({
+    action          : "submit",
+    timestamp       : new Date().toLocaleString("en-IN"),
+    refCode         : refCode,
+    referredBy      : (new URLSearchParams(window.location.search).get("ref") || ""),
+    language        : lang,
+    name            : fd.name,
+    phone           : fd.phone,
+    state           : fd.state,
+    city            : fd.city==="Other" ? fd.cityOther : fd.city,
+    platforms       : fd.platforms.map(p=>p===t().platforms[t().platforms.length-1]?fd.platformOther||p:p).join(", "),
+    vehicleType     : fd.vehicleType,
+    currentVehicle  : fd.vehicleType,
+    fuelType        : fd.fuelType,
+    evSpeed         : fd.evSpeed,
+    chargingMethod  : fd.charging,
+    chargeTime      : fd.chargeTime,
+    ownership       : fd.ownership,
+    emiRent         : fd.rental,
+    monthlyExpenses : fd.vehicleCost,
+    hasInsurance    : fd.hasInsurance,
+    insuranceType   : fd.insuranceType,
+    challenges      : fd.challenges.join(", "),
+    rtoTraining     : fd.otherChallenges.join(", "),
+    customerTraining: fd.personalAccident,
+    appChallenges   : "",
   });
+
+  // ── Send as GET request — Apps Script handles this natively ───────────────
+  try{
+    const res  = await fetch(SHEET_URL + "?" + params.toString());
+    const json = await res.json();
+
+    if(json.duplicate){
+      submitting=false;
+      errMsg="⚠️ This mobile number is already registered. Each number can only be submitted once.";
+      render(false); return;
+    }
+    if(!json.success){
+      console.warn("Sheet error:", json.message);
+    } else {
+      console.log("✅ Saved to sheet!");
+    }
+  }catch(e){
+    console.error("Submit error:", e);
+    // Still proceed to done screen even if sheet fails
+  }
 
   submitting=false;
   goScreen("done");
