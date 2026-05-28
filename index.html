@@ -140,7 +140,7 @@
 
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
-const SHEET_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbyO9shUs9BjgB6JDTN6ZXeOh5bG4jL_qj6TrwUh-QSAfBokvSefMvqV6gn3OzZf2lou/exec";
 // Replace above with your Google Apps Script Web App URL to save responses
 
 // ─── 8 LANGUAGES ─────────────────────────────────────────────────────────────
@@ -845,40 +845,71 @@ function submitFuel(){
 async function submitForm(){
   submitting=true; errMsg=""; render();
 
-  // ── Duplicate phone check via Apps Script ────────────────────────────────
-  if(SHEET_URL!=="YOUR_APPS_SCRIPT_URL_HERE"){
-    try{
-      const checkRes = await fetch(SHEET_URL+"?action=checkPhone&phone="+fd.phone);
+  if(SHEET_URL==="YOUR_APPS_SCRIPT_URL_HERE"){
+    // No sheet URL set — skip sheet, go to done
+    submitting=false; goScreen("done"); return;
+  }
+
+  // ── Step 1: Duplicate phone check ─────────────────────────────────────────
+  try{
+    const checkRes = await fetch(
+      SHEET_URL+"?action=checkPhone&phone="+encodeURIComponent(fd.phone),
+      {method:"GET"}
+    );
+    if(checkRes.ok){
       const checkData = await checkRes.json();
       if(checkData.exists){
         submitting=false;
-        errMsg="⚠️ This mobile number has already been registered. Each number can only be used once.";
-        render();
-        return;
+        errMsg="⚠️ This mobile number is already registered. Each number can only be submitted once.";
+        render(); return;
       }
+    }
+  }catch(e){ /* network error — proceed */ }
+
+  // ── Step 2: Build payload ─────────────────────────────────────────────────
+  const payload={
+    Timestamp   : new Date().toLocaleString("en-IN"),
+    RefCode     : refCode,
+    Language    : lang,
+    Name        : fd.name,
+    Phone       : fd.phone,
+    State       : fd.state,
+    City        : fd.city==="Other" ? fd.cityOther : fd.city,
+    Platforms   : fd.platforms.map(p=>p===t().platforms[t().platforms.length-1]?fd.platformOther||p:p).join(", "),
+    VehicleType : fd.vehicleType,
+    Ownership   : fd.ownership,
+    Rental      : fd.rental,
+    FuelType    : fd.fuelType,
+    EVSpeed     : fd.evSpeed,
+    ChargingMethod : fd.charging,
+    ChargeTime  : fd.chargeTime,
+    MonthlyCost : fd.vehicleCost,
+    HasInsurance: fd.hasInsurance,
+    PersonalAccidentInsurance: fd.personalAccident,
+    InsuranceType: fd.insuranceType,
+    Challenges  : fd.challenges.join(", "),
+    OtherChallenges: fd.otherChallenges.join(", "),
+  };
+
+  // ── Step 3: Submit to Google Sheet (with retry) ───────────────────────────
+  let submitted = false;
+  for(let attempt=0; attempt<3; attempt++){
+    try{
+      // Use text/plain to avoid CORS preflight — Apps Script accepts this
+      const res = await fetch(SHEET_URL, {
+        method  : "POST",
+        mode    : "no-cors",
+        headers : { "Content-Type": "text/plain" },
+        body    : JSON.stringify(payload),
+      });
+      submitted = true;
+      break;
     }catch(e){
-      // If check fails (network etc), proceed anyway
+      if(attempt===2) console.error("Sheet submit failed after 3 attempts:", e);
+      await new Promise(r=>setTimeout(r,1000));
     }
   }
 
-  const payload={
-    Timestamp:new Date().toLocaleString("en-IN"),RefCode:refCode,Language:lang,
-    Name:fd.name,Phone:fd.phone,State:fd.state,
-    City:fd.city==="Other"?fd.cityOther:fd.city,
-    Platforms:fd.platforms.map(p=>p===t().platforms[t().platforms.length-1]?fd.platformOther||p:p).join(", "),
-    VehicleType:fd.vehicleType,Ownership:fd.ownership,Rental:fd.rental,
-    FuelType:fd.fuelType,EVSpeed:fd.evSpeed,
-    ChargingMethod:fd.charging,ChargeTime:fd.chargeTime,VehicleCost:fd.vehicleCost,
-    HasInsurance:fd.hasInsurance,PersonalAccidentInsurance:fd.personalAccident,
-    InsuranceType:fd.insuranceType,
-    Challenges:fd.challenges.join(", "),OtherChallenges:fd.otherChallenges.join(", "),
-  };
-  try{
-    if(SHEET_URL!=="YOUR_APPS_SCRIPT_URL_HERE"){
-      await fetch(SHEET_URL,{method:"POST",mode:"no-cors",
-        headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    }
-  }catch(e){}
   submitting=false;
   goScreen("done");
 }
