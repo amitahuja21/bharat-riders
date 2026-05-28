@@ -542,6 +542,8 @@ function chip(label,active,onclick){
 function optBtn(label,active,onclick){
   return `<button class="opt-btn${active?" active":""}" onclick="${onclick}">${label}</button>`;
 }
+// Safe single-quote wrapper — prevents onclick attribute breaking
+function sq(s){ return "'" + String(s).replace(/'/g,"\'") + "'"; }
 function audioBar(text){
   const escaped = text.replace(/'/g,"\\'").replace(/"/g,"&quot;");
   return `<div class="audio-row">
@@ -658,7 +660,7 @@ const screens = {
       <button class="next-btn" id="regNextBtn" onclick="submitRegister()">${t().next}</button>
     </div>`;
   },
-    vehicle(){
+  vehicle(){
     return `<div class="card">
       <p class="step-title">🚗 ${t().vehicleQ}</p>
       ${audioBar(t().vehicleQ+" "+t().tw+". "+t().thw+". "+t().fw+".")}
@@ -712,7 +714,6 @@ const screens = {
     </div>`;
   },
   evq(){
-    function sq(s){ return "'" + s.replace(/'/g,"\\'") + "'"; }
     return `<div class="card">
       <p class="step-title">⚡ EV Details</p>
       ${audioBar(t().evSpeedQ+" "+t().chargingQ)}
@@ -758,7 +759,6 @@ const screens = {
   },
     general(){
     const ins = fd.hasInsurance==="yes";
-    function sq(s){ return "'" + s.replace(/'/g,"\\'") + "'"; }
     return `<div class="card">
       <p class="step-title">📋 General Info</p>
       ${audioBar(t().insuranceQ+" "+t().challengesQ)}
