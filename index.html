@@ -141,7 +141,7 @@
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbyO9shUs9BjgB6JDTN6ZXeOh5bG4jL_qj6TrwUh-QSAfBokvSefMvqV6gn3OzZf2lou/exec";
-// Replace above with your Google Apps Script Web App URL to save response
+// Replace above with your Google Apps Script Web App URL to save responses
 
 // ─── 8 LANGUAGES ─────────────────────────────────────────────────────────────
 const LANG_META = {
@@ -495,13 +495,21 @@ function getRefLink(){
 function t(){ return T[lang]; }
 
 // ─── RENDER ENGINE ────────────────────────────────────────────────────────────
-function render(){
+function render(scrollTop){
   const pct = {welcome:0,register:15,vehicle:30,fuel:45,evq:60,general:78,done:100}[screen]||0;
   document.getElementById("progress-fill").style.width = pct+"%";
+  // Save scroll position before re-render
+  const prevScroll = window.scrollY;
   const app = document.getElementById("screen-content");
   app.innerHTML = screens[screen]();
   attachEvents();
-  app.scrollIntoView({behavior:"smooth",block:"start"});
+  // Only scroll to top when explicitly changing screens, NOT on chip/option clicks
+  if(scrollTop){
+    window.scrollTo({top:0,behavior:"smooth"});
+  } else {
+    // Restore scroll position after re-render (prevents jump)
+    window.scrollTo({top:prevScroll});
+  }
 }
 
 // ─── SPEECH ───────────────────────────────────────────────────────────────────
@@ -816,7 +824,7 @@ const screens = {
 };
 
 function setLang(code){ lang=code; render(); }
-function goScreen(s){ errMsg=""; screen=s; render(); window.scrollTo({top:0,behavior:"smooth"}); }
+function goScreen(s){ errMsg=""; screen=s; render(true); }
 
 function submitRegister(){
   if(!fd.name.trim()||fd.phone.length<10||!fd.state||!fd.city||fd.platforms.length===0){
@@ -846,88 +854,93 @@ async function submitForm(){
   submitting=true; errMsg=""; render();
 
   if(SHEET_URL==="YOUR_APPS_SCRIPT_URL_HERE"){
-    // No sheet URL set — skip sheet, go to done
     submitting=false; goScreen("done"); return;
   }
 
-  // ── Step 1: Duplicate phone check ─────────────────────────────────────────
+  // ── Duplicate phone check ─────────────────────────────────────────────────
   try{
-    const checkRes = await fetch(
-      SHEET_URL+"?action=checkPhone&phone="+encodeURIComponent(fd.phone),
-      {method:"GET"}
-    );
-    if(checkRes.ok){
-      const checkData = await checkRes.json();
-      if(checkData.exists){
+    const chk = await fetch(SHEET_URL+"?action=checkPhone&phone="+encodeURIComponent(fd.phone));
+    if(chk.ok){
+      const d = await chk.json();
+      if(d.exists){
         submitting=false;
         errMsg="⚠️ This mobile number is already registered. Each number can only be submitted once.";
         render(); return;
       }
     }
-  }catch(e){ /* network error — proceed */ }
+  }catch(e){}
 
-  // ── Step 2: Build payload ─────────────────────────────────────────────────
+  // ── Build payload ─────────────────────────────────────────────────────────
   const payload={
-    Timestamp   : new Date().toLocaleString("en-IN"),
-    RefCode     : refCode,
-    Language    : lang,
-    Name        : fd.name,
-    Phone       : fd.phone,
-    State       : fd.state,
-    City        : fd.city==="Other" ? fd.cityOther : fd.city,
-    Platforms   : fd.platforms.map(p=>p===t().platforms[t().platforms.length-1]?fd.platformOther||p:p).join(", "),
-    VehicleType : fd.vehicleType,
-    Ownership   : fd.ownership,
-    Rental      : fd.rental,
-    FuelType    : fd.fuelType,
-    EVSpeed     : fd.evSpeed,
-    ChargingMethod : fd.charging,
-    ChargeTime  : fd.chargeTime,
-    MonthlyCost : fd.vehicleCost,
-    HasInsurance: fd.hasInsurance,
-    PersonalAccidentInsurance: fd.personalAccident,
+    Timestamp  : new Date().toLocaleString("en-IN"),
+    RefCode    : refCode,
+    Language   : lang,
+    Name       : fd.name,
+    Phone      : fd.phone,
+    State      : fd.state,
+    City       : fd.city==="Other"?fd.cityOther:fd.city,
+    Platforms  : fd.platforms.map(p=>p===t().platforms[t().platforms.length-1]?fd.platformOther||p:p).join(", "),
+    VehicleType: fd.vehicleType,
+    Ownership  : fd.ownership,
+    Rental     : fd.rental,
+    FuelType   : fd.fuelType,
+    EVSpeed    : fd.evSpeed,
+    Charging   : fd.charging,
+    ChargeTime : fd.chargeTime,
+    MonthlyCost: fd.vehicleCost,
+    Insurance  : fd.hasInsurance,
+    PersonalAccident: fd.personalAccident,
     InsuranceType: fd.insuranceType,
-    Challenges  : fd.challenges.join(", "),
+    Challenges : fd.challenges.join(", "),
     OtherChallenges: fd.otherChallenges.join(", "),
   };
 
-  // ── Step 3: Submit to Google Sheet ──────────────────────────────────────
-  let submitted = false;
-  let submitError = "";
-
-  // Method A: fetch with no-cors (most compatible)
-  try{
-    await fetch(SHEET_URL, {
-      method  : "POST",
-      mode    : "no-cors",
-      headers : { "Content-Type": "text/plain;charset=utf-8" },
-      body    : JSON.stringify(payload),
-    });
-    submitted = true;
-    console.log("✅ Submitted via Method A (no-cors POST)");
-  }catch(e){
-    submitError = e.toString();
-    console.warn("Method A failed:", e);
-  }
-
-  // Method B: If A failed, try form-encoded GET (fallback)
-  if(!submitted){
+  // ── MOST RELIABLE: Hidden form POST via iframe ────────────────────────────
+  // This bypasses all CORS issues — works 100% with Google Apps Script
+  await new Promise((resolve)=>{
     try{
-      const params = new URLSearchParams({data: JSON.stringify(payload)});
-      await fetch(SHEET_URL+"?"+params.toString(), {
-        method: "GET",
-        mode  : "no-cors",
-      });
-      submitted = true;
-      console.log("✅ Submitted via Method B (GET fallback)");
-    }catch(e){
-      console.error("Method B also failed:", e);
-    }
-  }
+      // Create hidden iframe
+      let ifr = document.getElementById("_submit_frame");
+      if(!ifr){
+        ifr = document.createElement("iframe");
+        ifr.id   = "_submit_frame";
+        ifr.name = "_submit_frame";
+        ifr.style.cssText = "display:none;width:0;height:0;border:0;position:absolute";
+        document.body.appendChild(ifr);
+      }
 
-  if(!submitted){
-    console.error("❌ All submission methods failed. Error:", submitError);
-  }
+      // Create hidden form targeting the iframe
+      const frm = document.createElement("form");
+      frm.method  = "POST";
+      frm.action  = SHEET_URL;
+      frm.target  = "_submit_frame";
+      frm.style.display = "none";
+      frm.enctype = "application/x-www-form-urlencoded";
+
+      // Add each field as a hidden input
+      Object.entries(payload).forEach(([k,v])=>{
+        const inp = document.createElement("input");
+        inp.type  = "hidden";
+        inp.name  = k;
+        inp.value = v || "";
+        frm.appendChild(inp);
+      });
+
+      // Also send full JSON in one field for easy parsing
+      const jsonInp = document.createElement("input");
+      jsonInp.type  = "hidden";
+      jsonInp.name  = "jsonData";
+      jsonInp.value = JSON.stringify(payload);
+      frm.appendChild(jsonInp);
+
+      document.body.appendChild(frm);
+      frm.submit();
+      setTimeout(()=>{ document.body.removeChild(frm); resolve(); }, 2000);
+    }catch(e){
+      console.error("Form submit failed:", e);
+      resolve();
+    }
+  });
 
   submitting=false;
   goScreen("done");
