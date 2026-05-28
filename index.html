@@ -498,17 +498,23 @@ function t(){ return T[lang]; }
 function render(scrollTop){
   const pct = {welcome:0,register:15,vehicle:30,fuel:45,evq:60,general:78,done:100}[screen]||0;
   document.getElementById("progress-fill").style.width = pct+"%";
-  // Save scroll position before re-render
-  const prevScroll = window.scrollY;
   const app = document.getElementById("screen-content");
+  // Save scroll BEFORE touching DOM
+  const savedScroll = window.pageYOffset || document.documentElement.scrollTop;
   app.innerHTML = screens[screen]();
   attachEvents();
-  // Only scroll to top when explicitly changing screens, NOT on chip/option clicks
   if(scrollTop){
-    window.scrollTo({top:0,behavior:"smooth"});
+    // Screen change — go to top
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   } else {
-    // Restore scroll position after re-render (prevents jump)
-    window.scrollTo({top:prevScroll});
+    // Option/chip click — restore position using rAF so DOM has settled
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        document.documentElement.scrollTop = savedScroll;
+        document.body.scrollTop = savedScroll;
+      });
+    });
   }
 }
 
