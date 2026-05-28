@@ -643,7 +643,7 @@ const screens = {
         <input type="text" placeholder="e.g. Shadowfax, WeFast, Borzo..." value="${fd.platformOther}" style="border:1.5px solid #16a34a;background:#edfaf2;width:100%;border-radius:10px;padding:12px 14px;font-size:15px;outline:none;margin-bottom:10px;font-family:'Noto Sans',sans-serif;box-sizing:border-box" oninput="fd.platformOther=this.value"/>
       `:""}
             ${errMsg?`<p class="err-msg">${errMsg}</p>`:""}
-      ${checkingPhone?`<button class="next-btn" disabled style="opacity:.7">🔍 Checking...</button>`:`<button class="next-btn" onclick="submitRegister()">${t().next}</button>`}
+      <button class="next-btn" id="regNextBtn" onclick="submitRegister()">${checkingPhone?"🔍 Checking...":t().next}</button>
     </div>`;
   },
   vehicle(){
@@ -833,53 +833,31 @@ function setLang(code){ lang=code; render(); }
 function goScreen(s){ errMsg=""; screen=s; render(true); }
 
 async function submitRegister(){
-  // ── Step 1: Basic validation ───────────────────────────────────────────────
+  // ── Basic validation ──────────────────────────────────────────────────────
   if(!fd.name.trim()||fd.phone.length<10||!fd.state||!fd.city||fd.platforms.length===0){
     errMsg=t().required; render(false); return;
   }
   if(fd.city==="Other"&&!fd.cityOther.trim()){
     errMsg="Please type your city name"; render(false); return;
   }
-  const otherPlatformLabel = t().platforms[t().platforms.length-1];
-  if(fd.platforms.includes(otherPlatformLabel)&&!fd.platformOther.trim()){
+  const otherLabel = t().platforms[t().platforms.length-1];
+  if(fd.platforms.includes(otherLabel)&&!fd.platformOther.trim()){
     errMsg="Please specify your platform name"; render(false); return;
   }
 
-  // ── Step 2: Check duplicate phone number BEFORE moving to next screen ──────
-  errMsg=""; 
-  checkingPhone=true; render(false);  // show loading state
-
+  // ── Duplicate phone check ─────────────────────────────────────────────────
+  checkingPhone=true; render(false);
+  let isDuplicate=false;
   try{
-    const checkURL = SHEET_URL +
-      "?action=submit&phone=" + encodeURIComponent(fd.phone) +
-      "&name=__CHECK_ONLY__&checkOnly=true";
+    const res  = await fetch(SHEET_URL+"?action=checkDuplicate&phone="+encodeURIComponent(fd.phone));
+    if(res.ok){ const j=await res.json(); isDuplicate=j.duplicate===true; }
+  }catch(e){ isDuplicate=false; } // if check fails, allow through
 
-    // Try fetch first
-    let isDuplicate = false;
-    try{
-      const res  = await fetch(
-        SHEET_URL + "?action=checkDuplicate&phone=" + encodeURIComponent(fd.phone)
-      );
-      const json = await res.json();
-      isDuplicate = json.duplicate === true;
-    }catch(e){
-      // CORS blocked — try alternate check via submit with dummy flag
-      // If we can't check, allow through (better UX than blocking)
-      isDuplicate = false;
-    }
-
-    checkingPhone=false;
-
-    if(isDuplicate){
-      errMsg="⚠️ " + fd.phone + " is already registered. Each mobile number can only be used once.";
-      render(false); return;
-    }
-  }catch(e){
-    checkingPhone=false;
-    console.warn("Phone check failed:", e);
-    // Allow through if check fails
+  checkingPhone=false;
+  if(isDuplicate){
+    errMsg="⚠️ Mobile number "+fd.phone+" is already registered. Each number can only be used once.";
+    render(false); return;
   }
-
   goScreen("vehicle");
 }
 function submitVehicle(){
