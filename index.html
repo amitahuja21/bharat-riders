@@ -643,7 +643,7 @@ const screens = {
         <input type="text" placeholder="e.g. Shadowfax, WeFast, Borzo..." value="${fd.platformOther}" style="border:1.5px solid #16a34a;background:#edfaf2;width:100%;border-radius:10px;padding:12px 14px;font-size:15px;outline:none;margin-bottom:10px;font-family:'Noto Sans',sans-serif;box-sizing:border-box" oninput="fd.platformOther=this.value"/>
       `:""}
             ${errMsg?`<p class="err-msg">${errMsg}</p>`:""}
-      <button class="next-btn" id="regNextBtn" onclick="submitRegister()">${checkingPhone?"🔍 Checking...":t().next}</button>
+      <button class="next-btn" id="regNextBtn" onclick="submitRegister()">${t().next}</button>
     </div>`;
   },
   vehicle(){
@@ -846,14 +846,23 @@ async function submitRegister(){
   }
 
   // ── Duplicate phone check ─────────────────────────────────────────────────
-  checkingPhone=true; render(false);
+  const btn = document.getElementById("regNextBtn");
+  if(btn){ btn.disabled=true; btn.textContent="🔍 Checking..."; }
+
   let isDuplicate=false;
   try{
-    const res  = await fetch(SHEET_URL+"?action=checkDuplicate&phone="+encodeURIComponent(fd.phone));
-    if(res.ok){ const j=await res.json(); isDuplicate=j.duplicate===true; }
-  }catch(e){ isDuplicate=false; } // if check fails, allow through
+    const res = await fetch(
+      SHEET_URL+"?action=checkDuplicate&phone="+encodeURIComponent(fd.phone),
+      {signal: AbortSignal.timeout(5000)}
+    );
+    if(res.ok){ const j=await res.json(); isDuplicate=(j.duplicate===true); }
+  }catch(e){
+    console.log("Phone check skipped:", e.message);
+    isDuplicate=false; // allow through if check fails
+  }
 
-  checkingPhone=false;
+  if(btn){ btn.disabled=false; btn.textContent=t().next; }
+
   if(isDuplicate){
     errMsg="⚠️ Mobile number "+fd.phone+" is already registered. Each number can only be used once.";
     render(false); return;
