@@ -140,7 +140,7 @@
 
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
-const SHEET_URL = "https://script.google.com/macros/s/1YNG2H6ShH-2ZaMBuDZ3C4Olr7dqAHSiKVl1zwRk3xPCOd6kU3E1SitjR/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbyO9shUs9BjgB6JDTN6ZXeOh5bG4jL_qj6TrwUh-QSAfBokvSefMvqV6gn3OzZf2lou/exec";
 // Replace above with your Google Apps Script Web App URL to save responses
 
 // ─── 8 LANGUAGES ─────────────────────────────────────────────────────────────
@@ -614,39 +614,51 @@ const screens = {
     return `<div class="card">
       <p class="step-title">📋 ${t().stepRegister}</p>
       ${audioBar(t().nameLabel+". "+t().phoneLabel+". "+t().stateLabel+". "+t().platformsQ)}
+
       <label class="field-label">${t().nameLabel} *</label>
-      <input type="text" placeholder="${t().namePH}" value="${fd.name}" oninput="fd.name=this.value"/>
+      <input type="text" placeholder="${t().namePH}" value="${fd.name}"
+        oninput="fd.name=this.value"/>
+
       <label class="field-label">${t().phoneLabel} *</label>
-      <input type="tel" placeholder="${t().phonePH}" value="${fd.phone}" maxlength="10" oninput="fd.phone=this.value.replace(/\\D/g,'')"/>
+      <input type="tel" placeholder="${t().phonePH}" value="${fd.phone}"
+        maxlength="10" inputmode="numeric"
+        oninput="fd.phone=this.value.replace(/[^0-9]/g,'')"/>
+
       <label class="field-label">${t().stateLabel} *</label>
-      <select onchange="fd.state=this.value;fd.city='';render()">
+      <select onchange="fd.state=this.value;fd.city='';render(false)">
         <option value="">-- ${t().stateLabel} --</option>
         ${stateOptions()}
       </select>
+
       <label class="field-label">${t().cityLabel} *</label>
-      <select ${!fd.state?"disabled":""} onchange="fd.city=this.value;render()">
+      <select ${!fd.state?"disabled":""} onchange="fd.city=this.value;render(false)">
         <option value="">-- ${t().cityLabel} --</option>
         ${cityOptions()}
       </select>
-      ${fd.city==="Other"?`
-      <label class="field-label" style="color:#0a5c28;font-weight:700">📝 Please type your city name *</label>
-      <input type="text" placeholder="Enter your city name" value="${fd.cityOther}"
-        style="border-color:#16a34a;background:#edfaf2"
-        oninput="fd.cityOther=this.value"/>
-      `:""}
+
+      ${fd.city==="Other"?
+        '<label class="field-label" style="color:#0a5c28;font-weight:700">📝 Please type your city name *</label>'+
+        '<input type="text" placeholder="Enter your city name" value="'+fd.cityOther+'"'+
+        ' style="border-color:#16a34a;background:#edfaf2" oninput="fd.cityOther=this.value"/>'
+        :""}
+
       <p class="section-q">${t().platformsQ} *</p>
       <div class="chip-grid">
-        ${t().platforms.map(p=>chip(p,fd.platforms.includes(p),`toggleArr('platforms','${p.replace(/'/g,"\\'")}')` )).join("")}
+        ${t().platforms.map(p=>chip(p,fd.platforms.includes(p),"toggleArr('platforms',"+sq(p)+")")).join("")}
       </div>
-      ${(fd.platforms.includes('Other')||fd.platforms.includes('अन्य')||fd.platforms.includes('અन્ય')||fd.platforms.includes('इतर')||fd.platforms.includes('மற்றவை')||fd.platforms.includes('ఇతరాలు')||fd.platforms.includes('ಇತರ')||fd.platforms.includes('অন্য'))?`
-        <label class="field-label" style="color:#0a5c28;font-weight:700;margin-top:2px">📝 Please specify your platform *</label>
-        <input type="text" placeholder="e.g. Shadowfax, WeFast, Borzo..." value="${fd.platformOther}" style="border:1.5px solid #16a34a;background:#edfaf2;width:100%;border-radius:10px;padding:12px 14px;font-size:15px;outline:none;margin-bottom:10px;font-family:'Noto Sans',sans-serif;box-sizing:border-box" oninput="fd.platformOther=this.value"/>
-      `:""}
-            ${errMsg?`<p class="err-msg">${errMsg}</p>`:""}
+
+      ${fd.platforms.includes(t().platforms[t().platforms.length-1])?
+        '<label class="field-label" style="color:#0a5c28;font-weight:700;margin-top:2px">📝 Please specify your platform *</label>'+
+        '<input type="text" placeholder="e.g. Shadowfax, WeFast, Borzo..." value="'+fd.platformOther+'"'+
+        ' style="border:1.5px solid #16a34a;background:#edfaf2;width:100%;border-radius:10px;padding:12px 14px;font-size:15px;outline:none;margin-bottom:10px;font-family:sans-serif;box-sizing:border-box"'+
+        ' oninput="fd.platformOther=this.value"/>'
+        :""}
+
+      ${errMsg?'<p class="err-msg">'+errMsg+'</p>':""}
       <button class="next-btn" id="regNextBtn" onclick="submitRegister()">${t().next}</button>
     </div>`;
   },
-  vehicle(){
+    vehicle(){
     return `<div class="card">
       <p class="step-title">🚗 ${t().vehicleQ}</p>
       ${audioBar(t().vehicleQ+" "+t().tw+". "+t().thw+". "+t().fw+".")}
