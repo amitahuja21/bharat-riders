@@ -891,23 +891,42 @@ async function submitForm(){
     OtherChallenges: fd.otherChallenges.join(", "),
   };
 
-  // ── Step 3: Submit to Google Sheet (with retry) ───────────────────────────
+  // ── Step 3: Submit to Google Sheet ──────────────────────────────────────
   let submitted = false;
-  for(let attempt=0; attempt<3; attempt++){
+  let submitError = "";
+
+  // Method A: fetch with no-cors (most compatible)
+  try{
+    await fetch(SHEET_URL, {
+      method  : "POST",
+      mode    : "no-cors",
+      headers : { "Content-Type": "text/plain;charset=utf-8" },
+      body    : JSON.stringify(payload),
+    });
+    submitted = true;
+    console.log("✅ Submitted via Method A (no-cors POST)");
+  }catch(e){
+    submitError = e.toString();
+    console.warn("Method A failed:", e);
+  }
+
+  // Method B: If A failed, try form-encoded GET (fallback)
+  if(!submitted){
     try{
-      // Use text/plain to avoid CORS preflight — Apps Script accepts this
-      const res = await fetch(SHEET_URL, {
-        method  : "POST",
-        mode    : "no-cors",
-        headers : { "Content-Type": "text/plain" },
-        body    : JSON.stringify(payload),
+      const params = new URLSearchParams({data: JSON.stringify(payload)});
+      await fetch(SHEET_URL+"?"+params.toString(), {
+        method: "GET",
+        mode  : "no-cors",
       });
       submitted = true;
-      break;
+      console.log("✅ Submitted via Method B (GET fallback)");
     }catch(e){
-      if(attempt===2) console.error("Sheet submit failed after 3 attempts:", e);
-      await new Promise(r=>setTimeout(r,1000));
+      console.error("Method B also failed:", e);
     }
+  }
+
+  if(!submitted){
+    console.error("❌ All submission methods failed. Error:", submitError);
   }
 
   submitting=false;
