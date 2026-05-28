@@ -843,7 +843,24 @@ function submitFuel(){
 }
 
 async function submitForm(){
-  submitting=true; render();
+  submitting=true; errMsg=""; render();
+
+  // ── Duplicate phone check via Apps Script ────────────────────────────────
+  if(SHEET_URL!=="YOUR_APPS_SCRIPT_URL_HERE"){
+    try{
+      const checkRes = await fetch(SHEET_URL+"?action=checkPhone&phone="+fd.phone);
+      const checkData = await checkRes.json();
+      if(checkData.exists){
+        submitting=false;
+        errMsg="⚠️ This mobile number has already been registered. Each number can only be used once.";
+        render();
+        return;
+      }
+    }catch(e){
+      // If check fails (network etc), proceed anyway
+    }
+  }
+
   const payload={
     Timestamp:new Date().toLocaleString("en-IN"),RefCode:refCode,Language:lang,
     Name:fd.name,Phone:fd.phone,State:fd.state,
